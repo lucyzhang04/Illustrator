@@ -132,7 +132,7 @@ body {
   pointer-events: none;
   animation: shade 1.1s ease-in-out;
 }
-@keyframes shade { 50% { opacity: 0.22; } }
+@keyframes shade { 50% { opacity: 0.1; } }
 
 .overlay { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
 .overlay > * { pointer-events: auto; }
@@ -187,9 +187,9 @@ button:disabled { cursor: default; }
 .namecard + .btn-next { animation-delay: 4.2s; }
 .namecard h1 { margin: 0 0 26px; font-size: 46px; line-height: 1.25; }
 .namecard-doodle { position: absolute; right: 8px; top: -86px; width: 74px; }
-.namecard-line { display: flex; align-items: baseline; justify-content: center; gap: 14px; font-size: 38px; font-weight: 700; }
+.namecard-line { display: flex; align-items: baseline; justify-content: center; gap: 14px; font-size: 38px; font-weight: 700; white-space: nowrap; }
 .namecard input {
-  width: 250px;
+  width: 220px;
   padding: 0 6px 2px;
   border: 0;
   border-bottom: 5px dashed var(--ink);

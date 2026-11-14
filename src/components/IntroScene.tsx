@@ -122,6 +122,7 @@ export function IntroScene({ side }: { side: 'left' | 'right' }) {
       </g>
 
       {/* A conveyor belt rolls in from the right... */}
+      <g transform="translate(0 -70)">
       <g className="belt-in">
         <g style={W}>
           <path className="ink" d="M772,684 L758,714 M772,684 L788,714 M1090,684 L1076,714 M1090,684 L1106,714" />
@@ -137,9 +138,10 @@ export function IntroScene({ side }: { side: 'left' | 'right' }) {
           <path className="belt-dash" d="M738,656 L1240,656" />
         </g>
       </g>
+      </g>
 
       {/* ...carrying a girl who is far too busy drawing to notice. */}
-      <g transform="translate(872 654)">
+      <g transform="translate(872 584)">
         <g className="girl-in">
           <g style={W}>
             <path className="inkf" fill="#fff" d="M-172,-2 L-86,-2 L-74,-19 L-160,-19 Z" />
@@ -191,7 +193,7 @@ export function IntroScene({ side }: { side: 'left' | 'right' }) {
       </g>
 
       {/* And a cat zooms in on a pencil rocket. */}
-      <g transform="translate(968 150)">
+      <g transform="translate(1020 138)">
         <g className="rocket-in">
           <g style={W} transform="rotate(-6)">
             <g className="flame">

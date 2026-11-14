@@ -106,7 +106,7 @@ export function DrawPage({ onInk, onNext }: {
 
 /** A quiet page with a few stars, behind the movie screen. */
 export function StarPage({ flip }: { flip?: boolean }) {
-  const stars = [[90, 90, 30, '#ffd43b'], [500, 150, 22, '#ff8787'], [80, 640, 24, '#74c0fc'], [520, 660, 32, '#8ce99a']] as const;
+  const stars = [[92, 96, 30, '#ffd43b'], [84, 330, 20, '#ff8787'], [66, 704, 24, '#74c0fc'], [330, 716, 20, '#8ce99a']] as const;
   return (
     <svg className="starpage" viewBox="0 0 600 750" aria-hidden="true" style={flip ? { transform: 'scaleX(-1)' } : undefined}>
       {stars.map(([x, y, r, color], i) => (
