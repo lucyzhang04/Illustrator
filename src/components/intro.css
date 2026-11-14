@@ -1,0 +1,124 @@
+/* The opening drawing. Every animation here runs once and then holds its
+   last frame, so the picture ends up still. Everything lands by ~4.7s. */
+
+.sc {
+  position: absolute;
+  top: 0;
+  width: 1200px;
+  height: 750px;
+  pointer-events: none;
+}
+.sc-left { left: 0; }
+.sc-right { left: -600px; }
+
+.sc .ink,
+.sc .inkf {
+  stroke: #2f2f38;
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sc .ink { fill: none; }
+
+.sc .block-letter {
+  font: 44px "Patrick Hand", "Comic Sans MS", cursive;
+  fill: #2f2f38;
+}
+
+/* lines that draw themselves */
+.sc .draw {
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 1.05;
+  animation: draw 1.2s 0.3s ease-out forwards;
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.sc .sun-fill { animation: fade-in 0.6s 1.4s ease-out both; }
+@keyframes fade-in { from { opacity: 0; } }
+
+/* blocks */
+.sc .drop { animation: drop 0.9s both; }
+@keyframes drop {
+  0% { transform: translateY(-820px); animation-timing-function: ease-in; }
+  60% { transform: none; animation-timing-function: ease-out; }
+  75% { transform: translateY(-26px); animation-timing-function: ease-in; }
+  88% { transform: none; animation-timing-function: ease-out; }
+  94% { transform: translateY(-8px); }
+  100% { transform: none; }
+}
+
+/* boy */
+.sc .boy-in { animation: boy-in 3s 0.2s cubic-bezier(0.3, 0.6, 0.4, 1) both; }
+@keyframes boy-in { from { transform: translateX(-560px); } }
+.sc .boy-bob { animation: bob 0.5s 0.2s ease-in-out 6 both; }
+@keyframes bob { 50% { transform: translateY(-7px); } }
+.sc .leg-a,
+.sc .leg-b { transform-origin: 0 -70px; }
+.sc .leg-a { animation: swing-a 0.5s 0.2s ease-in-out 6 both; }
+.sc .leg-b { animation: swing-b 0.5s 0.2s ease-in-out 6 both; }
+@keyframes swing-a { 25% { transform: rotate(24deg); } 75% { transform: rotate(-24deg); } }
+@keyframes swing-b { 25% { transform: rotate(-24deg); } 75% { transform: rotate(24deg); } }
+.sc .boy-show { transform-origin: 0 -118px; animation: show 0.8s 3.3s ease-out both; }
+@keyframes show {
+  0% { transform: none; }
+  60% { transform: rotate(-36deg); }
+  100% { transform: rotate(-24deg); }
+}
+
+/* friend with balloons */
+.sc .friend-in { animation: float-in 2.6s 0.8s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+@keyframes float-in {
+  0% { transform: translate(70px, -780px) rotate(9deg); }
+  50% { transform: translate(-26px, -290px) rotate(-6deg); }
+  82% { transform: translate(8px, -36px) rotate(3deg); }
+  100% { transform: none; }
+}
+
+/* conveyor belt and the girl drawing */
+.sc .belt-in { animation: belt-in 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+@keyframes belt-in { from { transform: translateX(560px); } }
+.sc .wheel { animation: spin 0.6s 0.8s linear 5 both; }
+@keyframes spin { to { transform: rotate(-360deg); } }
+.sc .belt-dash {
+  fill: none;
+  stroke: #2f2f38;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 14 18;
+  animation: belt-run 3s 0.8s linear both;
+}
+@keyframes belt-run { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 384; } }
+.sc .girl-in { animation: ride 3s 0.8s linear both; }
+@keyframes ride {
+  0% { transform: translateX(520px); }
+  92% { transform: none; }
+  96% { transform: translateX(-9px); }
+  100% { transform: none; }
+}
+.sc .kick-a,
+.sc .kick-b { transform-origin: 96px -8px; }
+.sc .kick-a { animation: kick 0.7s 0.8s ease-in-out 5 both; }
+.sc .kick-b { animation: kick 0.7s 1.15s ease-in-out 4 both; }
+@keyframes kick { 50% { transform: rotate(-22deg); } }
+.sc .scribble-arm { transform-origin: -56px -6px; animation: scribble 0.3s 3.6s ease-in-out 3 both; }
+@keyframes scribble { 50% { transform: rotate(7deg); } }
+
+/* bookworm */
+.sc .worm-up { animation: worm-up 1s 2.4s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+@keyframes worm-up { from { transform: translateY(170px); } }
+.sc .worm-head { transform-origin: 0 -60px; animation: tilt 0.5s 3.4s ease-in-out 2 both; }
+@keyframes tilt { 50% { transform: rotate(9deg); } }
+
+/* cat on a pencil rocket */
+.sc .rocket-in { animation: rocket 2.4s 1.2s cubic-bezier(0.3, 0.7, 0.3, 1) both; }
+@keyframes rocket {
+  0% { transform: translate(420px, -330px) rotate(38deg); }
+  60% { transform: translate(-70px, 34px) rotate(-12deg); }
+  82% { transform: translate(16px, -10px) rotate(4deg); }
+  100% { transform: none; }
+}
+.sc .flame { transform-origin: 80px 0; animation: flicker 0.2s 1.2s ease-in-out 14 both; }
+@keyframes flicker { 50% { transform: scaleX(0.6); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sc * { animation-duration: 0.01s !important; animation-delay: 0s !important; }
+}
