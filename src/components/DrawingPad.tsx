@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 
-type Stroke = { color: string; width: number; erase: boolean; pts: number[] };
+export type Stroke = { color: string; width: number; erase: boolean; pts: number[] };
 
 export const PAD_W = 1000; // canvas pixels: twice the size it is shown at
 export const PAD_H = 800;
@@ -54,18 +54,22 @@ function tail(ctx: CanvasRenderingContext2D, s: Stroke) {
   ctx.stroke();
 }
 
-export function DrawingPad({ onInk }: { onInk: (canvas: HTMLCanvasElement, hasInk: boolean) => void }) {
+export function DrawingPad({ initial, onInk }: {
+  /** A drawing made earlier on this page, to carry on with. */
+  initial?: Stroke[];
+  onInk: (canvas: HTMLCanvasElement, strokes: Stroke[]) => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const strokes = useRef<Stroke[]>([]);
+  const strokes = useRef<Stroke[]>(initial ? [...initial] : []);
   const current = useRef<Stroke | null>(null);
   const [color, setColor] = useState<string>(COLORS[0][1]);
   const [size, setSize] = useState<number>(SIZES[1][1]);
   const [erase, setErase] = useState(false);
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(strokes.current.length);
 
   const report = () => {
     setCount(strokes.current.length);
-    onInk(canvasRef.current!, strokes.current.some((s) => !s.erase));
+    onInk(canvasRef.current!, [...strokes.current]);
   };
 
   const redraw = () => {
@@ -138,6 +142,7 @@ export function DrawingPad({ onInk }: { onInk: (canvas: HTMLCanvasElement, hasIn
   // Keep a finger on the pad from scrolling or zooming the page.
   useEffect(() => {
     const el = canvasRef.current!;
+    if (strokes.current.length) redraw();
     const stop = (e: TouchEvent) => e.preventDefault();
     el.addEventListener('touchstart', stop, { passive: false });
     el.addEventListener('touchmove', stop, { passive: false });

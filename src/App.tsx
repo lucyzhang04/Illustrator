@@ -1,11 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Book } from './components/Book';
 import type { Spread } from './components/Book';
 import { Finale } from './components/Finale';
 import { IntroScene } from './components/IntroScene';
+import type { Stroke } from './components/DrawingPad';
 import { DrawPage, NameCard, StarPage, WordPage } from './components/Pages';
 import type { Drawing } from './lib/movie';
 import { makeWordStream } from './lib/words';
+
+/** What was drawn on one word page. The strokes let the child come back and change it. */
+type PageArt = { word: string; canvas: HTMLCanvasElement; strokes: Stroke[] };
 
 type Stage = { kind: 'intro' } | { kind: 'word'; n: number } | { kind: 'finale'; n: number; show: number };
 
@@ -29,30 +33,46 @@ export default function App() {
   useFit();
   const [stage, setStage] = useState<Stage>({ kind: 'intro' });
   const [name, setName] = useState('');
-  const [drawings, setDrawings] = useState<Drawing[]>([]);
+  const [pages, setPages] = useState<Record<number, PageArt>>({});
   const [hint, setHint] = useState(false);
   const wordAt = useRef(makeWordStream()).current;
-  const art = useRef<{ id: string; canvas: HTMLCanvasElement | null; hasInk: boolean }>({ id: '', canvas: null, hasInk: false });
+  const art = useRef<{ id: string; canvas: HTMLCanvasElement | null; strokes: Stroke[] }>({ id: '', canvas: null, strokes: [] });
   const audio = useRef<AudioContext | null>(null);
 
-  /** Keeps the picture on the current page, if there is one. Returns every picture so far. */
-  const keep = (n: number): Drawing[] => {
+  // The pictures for the movie, in page order.
+  const drawings: Drawing[] = useMemo(
+    () => Object.keys(pages).map(Number).sort((p, q) => p - q).map((n) => pages[n]),
+    [pages],
+  );
+
+  /** Keeps what is on the current page, if it changed. Returns how many pictures there are now. */
+  const keep = (n: number): number => {
     const a = art.current;
-    if (a.id !== `word-${n}` || !a.hasInk || !a.canvas) return drawings;
-    const copy = document.createElement('canvas');
-    copy.width = a.canvas.width;
-    copy.height = a.canvas.height;
-    copy.getContext('2d')!.drawImage(a.canvas, 0, 0);
-    art.current = { id: '', canvas: null, hasInk: false };
-    const all = [...drawings, { word: wordAt(n), canvas: copy }];
-    setDrawings(all);
-    return all;
+    if (a.id !== `word-${n}` || !a.canvas) return drawings.length;
+    art.current = { id: '', canvas: null, strokes: [] };
+    const next = { ...pages };
+    if (a.strokes.some((stroke) => !stroke.erase)) {
+      const copy = document.createElement('canvas');
+      copy.width = a.canvas.width;
+      copy.height = a.canvas.height;
+      copy.getContext('2d')!.drawImage(a.canvas, 0, 0);
+      next[n] = { word: wordAt(n), canvas: copy, strokes: a.strokes };
+    } else {
+      delete next[n];
+    }
+    setPages(next);
+    return Object.keys(next).length;
+  };
+  const turnTo = (n: number) => {
+    setHint(false);
+    setStage({ kind: 'word', n });
   };
 
   let spread: Spread;
   if (stage.kind === 'intro') {
     spread = {
       id: 'intro',
+      order: -1,
       left: <IntroScene side="left" />,
       right: <IntroScene side="right" />,
       overlay: <NameCard name={name} onName={setName} onNext={() => setStage({ kind: 'word', n: 0 })} />,
@@ -62,15 +82,29 @@ export default function App() {
     const id = `word-${n}`;
     spread = {
       id,
+      order: n * 2,
       left: (
         <WordPage
           name={name.trim()}
           word={wordAt(n)}
+          onBack={n > 0 ? () => {
+            keep(n);
+            turnTo(n - 1);
+          } : undefined}
+        />
+      ),
+      right: (
+        <DrawPage
+          initial={pages[n]?.strokes}
           count={drawings.length}
           hint={hint}
+          onInk={(canvas, strokes) => {
+            art.current = { id, canvas, strokes };
+            if (strokes.length) setHint(false);
+          }}
           onDone={() => {
-            const all = keep(n);
-            if (!all.length) return setHint(true);
+            const count = keep(n);
+            if (!count) return setHint(true);
             // Sound may only start from a tap, so the movie's music is set up here.
             try {
               audio.current ??= new AudioContext();
@@ -78,27 +112,19 @@ export default function App() {
             } catch {
               audio.current = null;
             }
-            setStage({ kind: 'finale', n, show: all.length });
-          }}
-        />
-      ),
-      right: (
-        <DrawPage
-          onInk={(canvas, hasInk) => {
-            art.current = { id, canvas, hasInk };
-            if (hasInk) setHint(false);
+            setStage({ kind: 'finale', n, show: count });
           }}
           onNext={() => {
             keep(n);
-            setHint(false);
-            setStage({ kind: 'word', n: n + 1 });
+            turnTo(n + 1);
           }}
         />
       ),
     };
   } else {
     spread = {
-      id: `finale-${stage.show}`,
+      id: `finale-${stage.n}-${stage.show}`,
+      order: stage.n * 2 + 1,
       left: <StarPage />,
       right: <StarPage flip />,
       overlay: (
@@ -106,7 +132,8 @@ export default function App() {
           name={name.trim()}
           drawings={drawings}
           audio={audio.current}
-          onMore={() => setStage({ kind: 'word', n: stage.n + 1 })}
+          onBack={() => turnTo(stage.n)}
+          onMore={() => turnTo(stage.n + 1)}
         />
       ),
     };

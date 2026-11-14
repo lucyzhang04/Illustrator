@@ -568,7 +568,7 @@ export const canRecordMovie = () =>
  */
 export function playMovie(
   canvas: HTMLCanvasElement, m: Movie, opts: { record: boolean; audio: AudioContext | null },
-): { done: Promise<Blob | null>; cancel: () => void } {
+): { done: Promise<Blob | null>; cancel: () => void; pause: () => void; resume: () => void } {
   const ctx = canvas.getContext('2d')!;
   const audio = opts.audio && opts.audio.state !== 'closed' ? opts.audio : null;
   let cancelled = false;
@@ -578,6 +578,8 @@ export function playMovie(
   let master: GainNode | null = null;
   const chunks: Blob[] = [];
   let cancel = () => {};
+  let pause = () => {};
+  let resume = () => {};
 
   renderMovie(ctx, 0, m);
   if (audio) {
@@ -634,24 +636,48 @@ export function playMovie(
       const a0 = audio.currentTime + 0.06;
       for (const note of m.notes) pluck(audio, master, a0 + note.t, note);
     }
-    const t0 = performance.now();
+    // Movie time only moves while playing, so a pause can last as long as it likes.
+    let t0 = performance.now();
+    let played = 0;
+    let paused = false;
+    let ended = false;
     const frame = () => {
-      if (cancelled) return;
-      const t = (performance.now() - t0) / 1000;
+      if (cancelled || paused) return;
+      const t = played + (performance.now() - t0) / 1000;
       renderMovie(ctx, Math.min(t, m.total), m);
       if (t < m.total + 0.3) raf = requestAnimationFrame(frame);
-      else finish();
+      else {
+        ended = true;
+        finish();
+      }
     };
     raf = requestAnimationFrame(frame);
+    pause = () => {
+      if (cancelled || paused || ended) return;
+      paused = true;
+      played += (performance.now() - t0) / 1000;
+      cancelAnimationFrame(raf);
+      if (recorder?.state === 'recording') recorder.pause();
+      void audio?.suspend(); // holds the music that is still to come
+    };
+    resume = () => {
+      if (cancelled || !paused || ended) return;
+      paused = false;
+      t0 = performance.now();
+      if (recorder?.state === 'paused') recorder.resume();
+      void audio?.resume();
+      raf = requestAnimationFrame(frame);
+    };
     cancel = () => {
       if (cancelled) return;
       cancelled = true;
       cancelAnimationFrame(raf);
+      void audio?.resume();
       finish();
     };
   });
 
-  return { done, cancel: () => cancel() };
+  return { done, cancel: () => cancel(), pause: () => pause(), resume: () => resume() };
 }
 
 /** One picture with every drawing and its word, ready to print or keep. */

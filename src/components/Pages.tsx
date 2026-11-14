@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { DrawingPad } from './DrawingPad';
+import type { Stroke } from './DrawingPad';
 import { canSpeak, isVowel, speak } from '../lib/words';
 
 /** The little card in the middle of the opening pages that asks for a name. */
@@ -53,9 +54,7 @@ export function NameCard({ name, onName, onNext }: { name: string; onName: (v: s
 }
 
 /** Left-hand page: the word to read. */
-export function WordPage({ name, word, count, hint, onDone }: {
-  name: string; word: string; count: number; hint: boolean; onDone: () => void;
-}) {
+export function WordPage({ name, word, onBack }: { name: string; word: string; onBack?: () => void }) {
   return (
     <div className="wordpage">
       <p className="hello">Hi, {name}!</p>
@@ -80,23 +79,33 @@ export function WordPage({ name, word, count, hint, onDone }: {
           <path d="M6,30 q40,-28 100,-6 M88,10 l20,14 l-22,12" fill="none" stroke="#e8590c" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </p>
-      <div className="done-row">
-        <button type="button" className="btn btn-done" onClick={onDone}>I'm done!</button>
-        {hint
-          ? <span className="tally nudge" role="status">Draw a picture first!</span>
-          : count > 0 && <span className="tally">{count} {count === 1 ? 'picture' : 'pictures'} so far</span>}
-      </div>
+      {onBack && (
+        <button type="button" className="btn btn-back" onClick={onBack}>
+          <span aria-hidden="true">←</span> Back
+        </button>
+      )}
     </div>
   );
 }
 
 /** Right-hand page: the drawing box. */
-export function DrawPage({ onInk, onNext }: {
-  onInk: (canvas: HTMLCanvasElement, hasInk: boolean) => void; onNext: () => void;
+export function DrawPage({ initial, count, hint, onInk, onDone, onNext }: {
+  initial?: Stroke[];
+  count: number;
+  hint: boolean;
+  onInk: (canvas: HTMLCanvasElement, strokes: Stroke[]) => void;
+  onDone: () => void;
+  onNext: () => void;
 }) {
   return (
     <div className="drawpage">
-      <DrawingPad onInk={onInk} />
+      <div className="done-row">
+        {hint
+          ? <span className="tally nudge" role="status">Draw a picture first!</span>
+          : count > 0 && <span className="tally">{count} {count === 1 ? 'picture' : 'pictures'} so far</span>}
+        <button type="button" className="btn btn-done" onClick={onDone}>I'm done!</button>
+      </div>
+      <DrawingPad initial={initial} onInk={onInk} />
       <button type="button" className="btn btn-next" onClick={onNext}>
         Next <span aria-hidden="true">→</span>
       </button>

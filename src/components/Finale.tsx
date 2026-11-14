@@ -8,18 +8,20 @@ import { localStoryboard } from '../lib/story';
 const WAIT_FOR_STORY_MS = 50_000;
 
 /** The movie screen: writes the story, plays it, and offers things to keep. */
-export function Finale({ name, drawings, audio, onMore }: {
-  name: string; drawings: Drawing[]; audio: AudioContext | null; onMore: () => void;
+export function Finale({ name, drawings, audio, onBack, onMore }: {
+  name: string; drawings: Drawing[]; audio: AudioContext | null; onBack: () => void; onMore: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const playing = useRef<{ cancel: () => void } | null>(null);
+  const playing = useRef<ReturnType<typeof playMovie> | null>(null);
   const [movie, setMovie] = useState<Movie | null>(null);
   const [busy, setBusy] = useState(true);
+  const [paused, setPaused] = useState(false);
   const [video, setVideo] = useState<Blob | null>(null);
 
   const play = useCallback((m: Movie, record: boolean) => {
     playing.current?.cancel();
     setBusy(true);
+    setPaused(false);
     const run = playMovie(canvasRef.current!, m, { record, audio });
     playing.current = run;
     void run.done.then((blob) => {
@@ -68,6 +70,14 @@ export function Finale({ name, drawings, audio, onMore }: {
     };
   }, [name, drawings, play]);
 
+  /** Stops the movie where it is so there is time to read, or starts it again. */
+  const togglePause = () => {
+    if (!busy || !movie || !playing.current) return;
+    if (paused) playing.current.resume();
+    else playing.current.pause();
+    setPaused(!paused);
+  };
+
   const file = name.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'my';
   const savePictures = async () => {
     const blob = await makePoster(name, drawings);
@@ -77,13 +87,28 @@ export function Finale({ name, drawings, audio, onMore }: {
   return (
     <div className="finale pop-in">
       <h1>{name}'s movie</h1>
-      <div className="screen">
-        <canvas ref={canvasRef} width={MOVIE_W} height={MOVIE_H} aria-label={`A short movie of ${name}'s drawings`} />
+      <div className={`screen${paused ? ' is-paused' : ''}`}>
+        <canvas
+          ref={canvasRef}
+          width={MOVIE_W}
+          height={MOVIE_H}
+          aria-label={`A short movie of ${name}'s drawings. Tap to pause or play.`}
+          onClick={togglePause}
+        />
       </div>
       <div className="finale-row">
-        <button type="button" className="btn btn-plain" disabled={busy || !movie} onClick={() => movie && play(movie, false)}>
-          Watch again
+        <button type="button" className="btn btn-plain" onClick={onBack}>
+          <span aria-hidden="true">←</span> Back
         </button>
+        {busy ? (
+          <button type="button" className="btn btn-pause" disabled={!movie} onClick={togglePause}>
+            {paused ? 'Play' : 'Pause'}
+          </button>
+        ) : (
+          <button type="button" className="btn btn-pause" disabled={!movie} onClick={() => movie && play(movie, false)}>
+            Watch again
+          </button>
+        )}
         {canRecordMovie() && (
           <button
             type="button"
@@ -95,7 +120,7 @@ export function Finale({ name, drawings, audio, onMore }: {
           </button>
         )}
         <button type="button" className="btn btn-save" onClick={() => void savePictures()}>Save pictures</button>
-        <button type="button" className="btn btn-next-inline" disabled={busy} onClick={onMore}>
+        <button type="button" className="btn btn-next-inline" onClick={onMore}>
           Draw more <span aria-hidden="true">→</span>
         </button>
       </div>
